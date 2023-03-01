@@ -149,7 +149,7 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < ownedStructures.Count; i++)
         {
-            ownedStructures[i].structureCurrentCost = ownedStructures[i].structureBaseCost * (int)Mathf.Pow(ownedStructures[i].structureCostMultiplier, ownedStructures[i].structureOwned);
+            ownedStructures[i].structureCurrentCost = (int)(ownedStructures[i].structureBaseCost * Mathf.Pow(ownedStructures[i].structureCostMultiplier, ownedStructures[i].structureOwned));
         }
     }
 
@@ -159,7 +159,7 @@ public class GameManager : MonoBehaviour
 
         iridiumPerClickText.text = iridiumPerClickPercent.ToString("0") + " % of Iridium/Sec";
         iridiumPerSecondText.text = iridiumPerSecond.ToString("000.00") + " Iridium/s";
-        totalIridiumText.text = totalIridium.ToString("0000") + " Iridium";
+        totalIridiumText.text = totalIridium.ToString("0") + " Iridium";
 
         for (int i = 0; i < ownedStructures.Count; i++)
         {

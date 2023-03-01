@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a0528895cb020c4283e95d2d50c2237, type: 3}
-  m_Name: 001
+  m_Name: 004
   m_EditorClassIdentifier: 
-  structureName: A
+  structureName: D
   structureOwned: 0
-  structureBaseCost: 20
-  structureBaseIridiumPerSecond: 0.5
+  structureBaseCost: 1200
+  structureBaseIridiumPerSecond: 25
   structureIridiumMultiplier: 1
   structureCostMultiplier: 1.15
   structureCostMultiplierMultiplier: 1

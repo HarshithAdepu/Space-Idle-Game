@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: 002
   m_EditorClassIdentifier: 
   structureName: B
-  structureOwned: 2
-  structureBaseCost: 25
-  structureBaseIridiumPerSecond: 5
+  structureOwned: 0
+  structureBaseCost: 90
+  structureBaseIridiumPerSecond: 1
   structureIridiumMultiplier: 1
-  structureCostMultiplier: 1.2
+  structureCostMultiplier: 1.15
   structureCostMultiplierMultiplier: 1
