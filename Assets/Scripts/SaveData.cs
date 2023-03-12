@@ -7,5 +7,5 @@ public class SaveData
     public float totalIridium;
     public float iridiumPerClickPercent;
     public float upgradeClick_BaseCost;
-    public List<IridiumGenerator> ownedStructures = new List<IridiumGenerator>();
+    public List<Troop> ownedStructures = new List<Troop>();
 }

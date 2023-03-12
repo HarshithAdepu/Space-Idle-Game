@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-[RequireComponent(typeof(LoadSaveSystem))]
+//[RequireComponent(typeof(LoadSaveSystem))]
 public class GameManager : MonoBehaviour
 {
     [Header("Profile Name")]
@@ -13,34 +13,43 @@ public class GameManager : MonoBehaviour
     [Header("Tick Rate")]
     public static int ticksPerSecond = 30;
 
-    [SerializeField] private List<IridiumGenerator> ownedStructures = new List<IridiumGenerator>();
+    [SerializeField] private List<Building> buildings = new List<Building>();
+    private Building selectedBuilding;
 
     [Header("Balancing")]
-    [SerializeField] private float clickUpgradePriceMultiplier = 1.2f;
-    [SerializeField] private float iridiumPerClickPercent = 1;
     [SerializeField] private float upgradeClick_BaseCost = 1000;
+    [SerializeField] private float iridiumPerClickPercent = 1;
+    private float iridiumPerClick = 1;
+    [SerializeField] private float clickUpgradePriceMultiplier = 1.2f;
     private float upgradeClick_CurrentCost = 1000;
 
-    [Header("Buttons")]
+    [Header("Main UI")]
+    [SerializeField] private GameObject GameUI;
+    [SerializeField] private TMP_Text totalIridiumText;
+    [SerializeField] private TMP_Text iridiumPerSecondText;
     [SerializeField] private Button getIridiumButton;
+    private TMP_Text getIridiumButtonText;
     [SerializeField] private Button upgradeClick_Button;
-    [SerializeField] private GameObject structureButtonParent;
-    [SerializeField] private GameObject structureButtonPrefab;
     private TMP_Text upgradeClick_ButtonText;
+
+    [Header("Building UI")]
+    [SerializeField] private GameObject buildingUI;
+    [SerializeField] private TMP_Text buildingTotalIridiumText;
+    [SerializeField] private TMP_Text buildingTotalIPSText;
+    [SerializeField] private TMP_Text buildingNameText;
+    [SerializeField] private TMP_Text buildingIPSText;
+    [SerializeField] private Button backButton;
+
+    [SerializeField] private GameObject troopButtonParent;
+    [SerializeField] private GameObject troopButtonPrefab;
 
     private List<Button> structureButtons;
     private List<TMP_Text> structureNameTexts;
     private List<TMP_Text> structureCostTexts;
     private List<TMP_Text> structureOwnedTexts;
+    private List<TMP_Text> structureIPSTexts;
 
-    [Space(10)]
 
-    [Header("Texts")]
-    [SerializeField] private TMP_Text totalIridiumText;
-    [SerializeField] private TMP_Text iridiumPerSecondText;
-    [SerializeField] private TMP_Text iridiumPerClickText;
-
-    private bool initializedUI = false;
     private bool iridiumClicked = false;
     private float totalIridium = 0;
     private float iridiumPerSecond = 0;
@@ -63,27 +72,31 @@ public class GameManager : MonoBehaviour
         StartGame();
     }
 
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                Debug.Log(hit.transform.name);
+            }
+        }
+    }
+
     private void OnDestroy()
     {
-        SaveGame();
+        //SaveGame();
     }
 
     private void StartGame()
     {
-        if (PlayerPrefs.GetInt(firstLaunchPlayerPref, 0) == 0)
-        {
-            LoadStructureSOs(); //Load structure Scriptable Objects and put save data into them
 
-            SaveGame(); //Save the game
+        buildings = new List<Building>(FindObjectsOfType<Building>());
 
-            PlayerPrefs.SetInt(firstLaunchPlayerPref, 1);
-        }
-        else
-        {
-            LoadGame(); // Load the save data
-
-            UpdateIridiumPerSecond(); //Update the iridium per second
-        }
+        UpdateIridiumPerSecond(); //Update the iridium per second
 
         InitializeUI(); //Initialize all UI Variables
 
@@ -103,14 +116,24 @@ public class GameManager : MonoBehaviour
         tickCoroutine = StartCoroutine(Tick());
     }
 
-    private void LoadStructureSOs()
+    private void UpdateIridiumPerSecond()
     {
-        var os = Resources.LoadAll("IridiumGenerators", typeof(IridiumGeneratorSO));
+        iridiumPerSecond = 0;
+
+        foreach (Building b in buildings)
+        {
+            iridiumPerSecond += b.GetIridiumPerTick() * ticksPerSecond;
+        }
+    }
+
+    private void LoadBuildingSOs()
+    {
+        var os = Resources.LoadAll("Troops", typeof(TroopSO));
 
         foreach (var o in os)
         {
-            IridiumGenerator structure = new((IridiumGeneratorSO)o);
-            ownedStructures.Add(structure);
+            Troop structure = new((TroopSO)o);
+            //buildings.Add(structure);
         }
 
         UpdateIridiumPerSecond();
@@ -120,65 +143,94 @@ public class GameManager : MonoBehaviour
     {
         getIridiumButton.onClick.AddListener(GetIridiumClicked);
         upgradeClick_Button.onClick.AddListener(UpgradeClickClicked);
+        backButton.onClick.AddListener(BackButtonClicked);
+        getIridiumButtonText = getIridiumButton.transform.GetChild(0).GetComponent<TMP_Text>();
         upgradeClick_ButtonText = upgradeClick_Button.transform.GetChild(0).GetComponent<TMP_Text>();
-
-        structureButtons = new List<Button>();
-        structureNameTexts = new List<TMP_Text>();
-        structureCostTexts = new List<TMP_Text>();
-        structureOwnedTexts = new List<TMP_Text>();
-
-        for (int i = 0; i < ownedStructures.Count; i++)
-        {
-            int j = i;
-            GameObject obj = Instantiate(structureButtonPrefab, structureButtonParent.transform);
-            obj.name = ownedStructures[i].structureName + " Button";
-            structureButtons.Add(obj.GetComponent<Button>());
-            structureNameTexts.Add(obj.transform.GetChild(0).GetComponent<TMP_Text>());
-            structureCostTexts.Add(obj.transform.GetChild(1).GetComponent<TMP_Text>());
-            structureOwnedTexts.Add(obj.transform.GetChild(2).GetComponent<TMP_Text>());
-
-            structureButtons[i].onClick.AddListener(() => StructureBuyClicked(j));
-        }
-
-        initializedUI = true;
     }
 
     private void CalculateCosts()
     {
         upgradeClick_CurrentCost = (int)(upgradeClick_BaseCost * Mathf.Pow(clickUpgradePriceMultiplier, iridiumPerClickPercent - 1));
-
-        for (int i = 0; i < ownedStructures.Count; i++)
+        iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
+        foreach (Building b in buildings)
         {
-            ownedStructures[i].structureCurrentCost = (int)(ownedStructures[i].structureBaseCost * Mathf.Pow(ownedStructures[i].structureCostMultiplier, ownedStructures[i].structureOwned));
+            foreach (Troop t in b.ownedTroops)
+            {
+                t.structureCurrentCost = (int)(t.structureBaseCost * Mathf.Pow(t.structureCostMultiplier, t.structureOwned));
+            }
         }
     }
 
     private void UpdateAllUI()
     {
-        if (!initializedUI) return;
-
-        iridiumPerClickText.text = iridiumPerClickPercent.ToString("0") + " % of Iridium/Sec";
+        getIridiumButtonText.text = "Get Iridium \n(+" + iridiumPerClick + " Iridium)";
         iridiumPerSecondText.text = iridiumPerSecond.ToString("000.00") + " Iridium/s";
         totalIridiumText.text = totalIridium.ToString("0") + " Iridium";
-
-        for (int i = 0; i < ownedStructures.Count; i++)
-        {
-            structureNameTexts[i].text = ownedStructures[i].structureName;
-            structureCostTexts[i].text = "$" + ownedStructures[i].structureCurrentCost.ToString();
-            structureOwnedTexts[i].text = ownedStructures[i].structureOwned.ToString();
-        }
-
         upgradeClick_ButtonText.text = "Upgrade Click ($" + upgradeClick_CurrentCost.ToString() + ")";
+
+        if (selectedBuilding != null)
+        {
+            buildingNameText.text = selectedBuilding.buildingName + " (Lvl " + selectedBuilding.buildingLevel + ")";
+            buildingIPSText.text = (selectedBuilding.GetIridiumPerTick() * ticksPerSecond).ToString() + " Iridium/s";
+            buildingTotalIridiumText.text = totalIridium.ToString("0") + " Iridium";
+            buildingTotalIPSText.text = iridiumPerSecond.ToString("0.00") + " Iridium/s";
+            for (int i = 0; i < selectedBuilding.ownedTroops.Count; i++)
+            {
+                structureNameTexts[i].text = selectedBuilding.ownedTroops[i].structureName;
+                structureCostTexts[i].text = "$" + selectedBuilding.ownedTroops[i].structureCurrentCost.ToString();
+                structureOwnedTexts[i].text = selectedBuilding.ownedTroops[i].structureOwned.ToString() + " owned";
+                structureIPSTexts[i].text = "+" + (selectedBuilding.ownedTroops[i].GetIridiumPerTick() * ticksPerSecond).ToString("0.0") + "i/s";
+            }
+        }
     }
 
-    private void UpdateIridiumPerSecond()
+    private void PopulateBuildingPanel()
     {
-        iridiumPerSecond = 0;
-
-        for (int i = 0; i < ownedStructures.Count; i++)
+        if (selectedBuilding != null)
         {
-            iridiumPerSecond += ownedStructures[i].GetIridiumPerTick() * ticksPerSecond;
+            structureButtons = new List<Button>();
+            structureNameTexts = new List<TMP_Text>();
+            structureCostTexts = new List<TMP_Text>();
+            structureOwnedTexts = new List<TMP_Text>();
+            structureIPSTexts = new List<TMP_Text>();
+
+            for (int i = 0; i < selectedBuilding.ownedTroops.Count; i++)
+            {
+                int j = i;
+
+                GameObject newButton = Instantiate(troopButtonPrefab, troopButtonParent.transform);
+                newButton.name = selectedBuilding.ownedTroops[i].structureName + " Button";
+                structureButtons.Add(newButton.GetComponent<Button>());
+                structureNameTexts.Add(newButton.transform.GetChild(0).GetComponent<TMP_Text>());
+                structureCostTexts.Add(newButton.transform.GetChild(1).GetComponent<TMP_Text>());
+                structureOwnedTexts.Add(newButton.transform.GetChild(2).GetComponent<TMP_Text>());
+                structureIPSTexts.Add(newButton.transform.GetChild(3).GetComponent<TMP_Text>());
+
+                structureButtons[i].onClick.AddListener(() => StructureBuyClicked(j));
+            }
         }
+    }
+
+    void CleanUpPanel()
+    {
+        if (selectedBuilding == null)
+            return;
+
+        foreach (Button b in structureButtons)
+        {
+            b.onClick.RemoveAllListeners();
+        }
+
+        foreach (Button b in structureButtons)
+        {
+            Destroy(b.gameObject);
+        }
+
+        structureButtons.Clear();
+        structureNameTexts.Clear();
+        structureCostTexts.Clear();
+        structureOwnedTexts.Clear();
+        structureIPSTexts.Clear();
     }
 
     #endregion
@@ -195,7 +247,7 @@ public class GameManager : MonoBehaviour
 
     private void ProcessIridiumAdded()
     {
-        ProcessIridiumPerStructure();
+        ProcessIridiumPerBuilding();
 
         if (iridiumClicked)
         {
@@ -208,21 +260,22 @@ public class GameManager : MonoBehaviour
 
     private void ProcessClickedIridium()
     {
-        float iridiumToAdd = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
-        totalIridium += iridiumToAdd;
-        totalIridiumText.text = totalIridium.ToString() + " Iridium";
+        iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
+        totalIridium += iridiumPerClick;
+        //UpdateAllUI();
     }
 
-    private void ProcessIridiumPerStructure()
+    private void ProcessIridiumPerBuilding()
     {
-        if (ownedStructures.Count > 0)
+        if (buildings.Count > 0)
         {
-            foreach (IridiumGenerator structure in ownedStructures)
+            foreach (Building b in buildings)
             {
-                float x = structure.GetIridiumPerTick();
+                float x = b.GetIridiumPerTick();
                 totalIridium += x;
             }
         }
+        //UpdateAllUI();
     }
 
     #endregion
@@ -240,25 +293,42 @@ public class GameManager : MonoBehaviour
             totalIridium -= upgradeClick_CurrentCost;
             upgradeClick_CurrentCost = (int)(upgradeClick_CurrentCost * clickUpgradePriceMultiplier);
             iridiumPerClickPercent += 1;
-            iridiumPerClickText.text = iridiumPerClickPercent.ToString() + " % of Iridium/Sec";
-            totalIridiumText.text = totalIridium.ToString() + " Iridium";
-            upgradeClick_ButtonText.text = "Upgrade Click ($" + upgradeClick_CurrentCost.ToString() + ")";
+            iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
         }
+
+        //UpdateAllUI();
     }
 
     private void StructureBuyClicked(int structureIndex)
     {
-        if (totalIridium >= ownedStructures[structureIndex].structureCurrentCost)
+        if (selectedBuilding == null)
         {
-            totalIridium -= ownedStructures[structureIndex].structureCurrentCost;
-            ownedStructures[structureIndex].structureOwned += 1;
-            ownedStructures[structureIndex].structureCurrentCost = (int)(ownedStructures[structureIndex].structureCurrentCost * ownedStructures[structureIndex].structureCostMultiplier);
-            structureOwnedTexts[structureIndex].text = ownedStructures[structureIndex].structureOwned.ToString();
-            structureCostTexts[structureIndex].text = ownedStructures[structureIndex].structureCurrentCost.ToString();
-            totalIridiumText.text = totalIridium.ToString() + " Iridium";
+            Debug.LogError("No building selected, cannot buy structure.");
+        }
+        else
+        {
+            if (totalIridium >= selectedBuilding.ownedTroops[structureIndex].structureCurrentCost)
+            {
+                totalIridium -= selectedBuilding.ownedTroops[structureIndex].structureCurrentCost;
+                selectedBuilding.ownedTroops[structureIndex].structureOwned += 1;
+                selectedBuilding.ownedTroops[structureIndex].structureCurrentCost = (int)(selectedBuilding.ownedTroops[structureIndex].structureCurrentCost * selectedBuilding.ownedTroops[structureIndex].structureCostMultiplier);
+            }
+            //UpdateAllUI();
         }
 
         UpdateIridiumPerSecond();
+    }
+
+    private void BackButtonClicked()
+    {
+        if (selectedBuilding != null)
+        {
+            GameUI.SetActive(true);
+            buildingUI.SetActive(false);
+
+            CleanUpPanel();
+            selectedBuilding = null;
+        }
     }
 
     #endregion
@@ -278,7 +348,6 @@ public class GameManager : MonoBehaviour
         saveData.totalIridium = totalIridium;
         saveData.iridiumPerClickPercent = iridiumPerClickPercent;
         saveData.upgradeClick_BaseCost = upgradeClick_BaseCost;
-        saveData.ownedStructures = ownedStructures;
 
         return saveData;
     }
@@ -290,10 +359,9 @@ public class GameManager : MonoBehaviour
         totalIridium = saveData.totalIridium;
         iridiumPerClickPercent = saveData.iridiumPerClickPercent;
         upgradeClick_BaseCost = saveData.upgradeClick_BaseCost;
-        ownedStructures = saveData.ownedStructures;
 
         SetupCoroutine();
-        UpdateAllUI();
+        //UpdateAllUI();
     }
 
     void Reset()
@@ -301,8 +369,20 @@ public class GameManager : MonoBehaviour
         totalIridium = 0;
         iridiumPerClickPercent = 1;
         upgradeClick_CurrentCost = upgradeClick_BaseCost;
-        ownedStructures = new List<IridiumGenerator>();
     }
 
     #endregion
+
+    public void ClickedOnBuilding(Building building)
+    {
+        if (selectedBuilding != null)
+        {
+            CleanUpPanel();
+        }
+
+        selectedBuilding = building;
+        GameUI.SetActive(false);
+        buildingUI.SetActive(true);
+        PopulateBuildingPanel();
+    }
 }

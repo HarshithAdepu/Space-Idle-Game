@@ -24,7 +24,7 @@ public class LoadSaveSystem : MonoBehaviour
     {
         while (true)
         {
-            Save(gameManager.GetSaveData());
+            //Save(gameManager.GetSaveData());
             yield return saveWait;
         }
     }
@@ -52,6 +52,7 @@ public class LoadSaveSystem : MonoBehaviour
         string jsonData = File.ReadAllText(saveDir + string.Concat(GameManager.profileName, ".json"));
         SaveData saveData = JsonUtility.FromJson<SaveData>(jsonData);
         return saveData;
+        //return null;
         //gameManager.LoadSaveData(saveData);
     }
 }
