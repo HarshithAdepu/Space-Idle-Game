@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a0528895cb020c4283e95d2d50c2237, type: 3}
   m_Name: 002
   m_EditorClassIdentifier: 
-  structureName: B
+  structureName: B2
   structureLevel: 1
-  structureOwned: 1
-  structureBaseCost: 75
+  structureOwned: 0
+  structureBaseCost: 90
   structureBaseIridiumPerSecond: 2
   structureIridiumMultiplier: 1
-  structureCostMultiplier: 1.25
+  structureCostMultiplier: 1.2
   structureCostMultiplierMultiplier: 1
