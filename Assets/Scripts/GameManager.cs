@@ -375,11 +375,11 @@ public class GameManager : MonoBehaviour
 
     public void ClickedOnBuilding(Building building)
     {
-        if (selectedBuilding != null)
-        {
-            CleanUpPanel();
-        }
+        if (building == null) return;
 
+        if (building == selectedBuilding) return;
+
+        CleanUpPanel();
         selectedBuilding = building;
         GameUI.SetActive(false);
         buildingUI.SetActive(true);
