@@ -18,10 +18,12 @@ public class GameManager : MonoBehaviour
     private Building selectedBuilding;
 
     [Header("Balancing")]
+    [SerializeField] private double iridiumPerSecondBoostDuration = 10;
+    [SerializeField] private double iridiumPerSecondBoostMultiplier = 2;
     [SerializeField] private double upgradeClick_BaseCost = 1000;
     [SerializeField] private double iridiumPerClickPercent = 1;
     private double iridiumPerClick = 1;
-    [SerializeField] private double clickUpgradePriceMultiplier = 1.2f;
+    [SerializeField] private double clickUpgradePriceMultiplier = 1.2;
     private double upgradeClick_CurrentCost = 1000;
 
     [Header("Main UI")]
@@ -29,6 +31,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text totalIridiumText;
     [SerializeField] private TMP_Text iridiumPerSecondText;
     [SerializeField] private Button getIridiumButton;
+    [SerializeField] private Button boostIridiumPerSecond_Button;
     private TMP_Text getIridiumButtonText;
     [SerializeField] private Button upgradeClick_Button;
     private TMP_Text upgradeClick_ButtonText;
@@ -51,12 +54,14 @@ public class GameManager : MonoBehaviour
     private List<TMP_Text> structureIPSTexts;
 
 
+    private bool iridiumPerSecondBoosted = false;
     private bool iridiumClicked = false;
     private double totalIridium = 0;
     private double iridiumPerSecond = 0;
     private string firstLaunchPlayerPref = "FirstLaunch";
 
     private Coroutine tickCoroutine;
+    private Coroutine boostCoroutine;
     private WaitForSeconds tickWait;
 
     private LoadSaveSystem loadSaveSystem;
@@ -99,7 +104,7 @@ public class GameManager : MonoBehaviour
         if (tickCoroutine != null)
             StopCoroutine(tickCoroutine);
 
-        tickWait = new WaitForSeconds(1f / ticksPerSecond);
+        tickWait = new WaitForSeconds(1.0f / ticksPerSecond);
         tickCoroutine = StartCoroutine(Tick());
     }
 
@@ -110,7 +115,7 @@ public class GameManager : MonoBehaviour
         {
             iridiumPerSecond += b.GetIridiumPerTick() * ticksPerSecond;
         }
-        
+        iridiumPerSecond = iridiumPerSecondBoosted ? iridiumPerSecond * iridiumPerSecondBoostMultiplier : iridiumPerSecond;
         iridiumPerClick = Math.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
     }
 
@@ -132,6 +137,7 @@ public class GameManager : MonoBehaviour
         getIridiumButton.onClick.AddListener(GetIridiumClicked);
         upgradeClick_Button.onClick.AddListener(UpgradeClickClicked);
         backButton.onClick.AddListener(BackButtonClicked);
+        boostIridiumPerSecond_Button.onClick.AddListener(BoostIridiumPerSecondClicked);
         getIridiumButtonText = getIridiumButton.transform.GetChild(0).GetComponent<TMP_Text>();
         upgradeClick_ButtonText = upgradeClick_Button.transform.GetChild(0).GetComponent<TMP_Text>();
     }
@@ -221,6 +227,15 @@ public class GameManager : MonoBehaviour
         structureIPSTexts.Clear();
     }
 
+    private IEnumerator IridiumPerSecondBoost()
+    {
+        iridiumPerSecondBoosted = true;
+        UpdateIridiumPerSecond();
+        yield return new WaitForSeconds((float)iridiumPerSecondBoostDuration);
+        iridiumPerSecondBoosted = false;
+        UpdateIridiumPerSecond();
+    }
+
     #endregion
 
     private IEnumerator Tick()
@@ -255,14 +270,8 @@ public class GameManager : MonoBehaviour
 
     private void ProcessIridiumPerBuilding()
     {
-        if (buildings.Count > 0)
-        {
-            foreach (Building b in buildings)
-            {
-                double x = b.GetIridiumPerTick();
-                totalIridium += x;
-            }
-        }
+
+        totalIridium += iridiumPerSecond / ticksPerSecond;
         //UpdateAllUI();
     }
 
@@ -317,6 +326,17 @@ public class GameManager : MonoBehaviour
             CleanUpPanel();
             selectedBuilding = null;
         }
+    }
+
+    private void BoostIridiumPerSecondClicked()
+    {
+        if (boostCoroutine != null)
+        {
+            StopCoroutine(boostCoroutine);
+            boostCoroutine = null;
+        }
+
+        boostCoroutine = StartCoroutine(IridiumPerSecondBoost());
     }
 
     #endregion
