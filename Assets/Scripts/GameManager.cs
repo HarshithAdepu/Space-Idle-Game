@@ -1,7 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Collections;
 using UnityEngine.UI;
+using UnityEngine;
+using System;
 using TMPro;
 
 //[RequireComponent(typeof(LoadSaveSystem))]
@@ -17,11 +18,11 @@ public class GameManager : MonoBehaviour
     private Building selectedBuilding;
 
     [Header("Balancing")]
-    [SerializeField] private float upgradeClick_BaseCost = 1000;
-    [SerializeField] private float iridiumPerClickPercent = 1;
-    private float iridiumPerClick = 1;
-    [SerializeField] private float clickUpgradePriceMultiplier = 1.2f;
-    private float upgradeClick_CurrentCost = 1000;
+    [SerializeField] private double upgradeClick_BaseCost = 1000;
+    [SerializeField] private double iridiumPerClickPercent = 1;
+    private double iridiumPerClick = 1;
+    [SerializeField] private double clickUpgradePriceMultiplier = 1.2f;
+    private double upgradeClick_CurrentCost = 1000;
 
     [Header("Main UI")]
     [SerializeField] private GameObject GameUI;
@@ -51,8 +52,8 @@ public class GameManager : MonoBehaviour
 
 
     private bool iridiumClicked = false;
-    private float totalIridium = 0;
-    private float iridiumPerSecond = 0;
+    private double totalIridium = 0;
+    private double iridiumPerSecond = 0;
     private string firstLaunchPlayerPref = "FirstLaunch";
 
     private Coroutine tickCoroutine;
@@ -150,13 +151,13 @@ public class GameManager : MonoBehaviour
 
     private void CalculateCosts()
     {
-        upgradeClick_CurrentCost = (int)(upgradeClick_BaseCost * Mathf.Pow(clickUpgradePriceMultiplier, iridiumPerClickPercent - 1));
-        iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
+        upgradeClick_CurrentCost = (int)(upgradeClick_BaseCost * Math.Pow(clickUpgradePriceMultiplier, iridiumPerClickPercent - 1));
+        iridiumPerClick = Math.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
         foreach (Building b in buildings)
         {
             foreach (Troop t in b.ownedTroops)
             {
-                t.structureCurrentCost = (int)(t.structureBaseCost * Mathf.Pow(t.structureCostMultiplier, t.structureOwned));
+                t.structureCurrentCost = (int)(t.structureBaseCost * Math.Pow(t.structureCostMultiplier, t.structureOwned));
             }
         }
     }
@@ -260,7 +261,7 @@ public class GameManager : MonoBehaviour
 
     private void ProcessClickedIridium()
     {
-        iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
+        iridiumPerClick = Math.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
         totalIridium += iridiumPerClick;
         //UpdateAllUI();
     }
@@ -271,7 +272,7 @@ public class GameManager : MonoBehaviour
         {
             foreach (Building b in buildings)
             {
-                float x = b.GetIridiumPerTick();
+                double x = b.GetIridiumPerTick();
                 totalIridium += x;
             }
         }
@@ -293,7 +294,7 @@ public class GameManager : MonoBehaviour
             totalIridium -= upgradeClick_CurrentCost;
             upgradeClick_CurrentCost = (int)(upgradeClick_CurrentCost * clickUpgradePriceMultiplier);
             iridiumPerClickPercent += 1;
-            iridiumPerClick = Mathf.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
+            iridiumPerClick = Math.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
         }
 
         //UpdateAllUI();

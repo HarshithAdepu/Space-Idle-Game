@@ -31,9 +31,9 @@ public class Building : MonoBehaviour
         return data;
     }
 
-    public float GetIridiumPerTick()
+    public double GetIridiumPerTick()
     {
-        float x = 0;
+        double x = 0;
         foreach (Troop troop in ownedTroops)
         {
             x += troop.GetIridiumPerTick() * troop.structureOwned;

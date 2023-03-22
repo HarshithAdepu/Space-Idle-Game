@@ -4,8 +4,8 @@ using System.Collections.Generic;
 public class SaveData
 {
     public string profileName;
-    public float totalIridium;
-    public float iridiumPerClickPercent;
-    public float upgradeClick_BaseCost;
+    public double totalIridium;
+    public double iridiumPerClickPercent;
+    public double upgradeClick_BaseCost;
     public List<Troop> ownedStructures = new List<Troop>();
 }

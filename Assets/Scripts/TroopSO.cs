@@ -8,9 +8,9 @@ public class TroopSO : ScriptableObject
     public string structureName = "Name";
     public int structureLevel = 1;
     public int structureOwned = 0;
-    public float structureBaseCost = 0;
-    public float structureBaseIridiumPerSecond = 0;
-    public float structureIridiumMultiplier = 1;
-    public float structureCostMultiplier = 1.25f;
-    public float structureCostMultiplierMultiplier = 1;
+    public double structureBaseCost = 0;
+    public double structureBaseIridiumPerSecond = 0;
+    public double structureIridiumMultiplier = 1;
+    public double structureCostMultiplier = 1.25f;
+    public double structureCostMultiplierMultiplier = 1;
 }
