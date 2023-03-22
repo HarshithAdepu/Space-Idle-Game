@@ -73,20 +73,6 @@ public class GameManager : MonoBehaviour
         StartGame();
     }
 
-    void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            if (Physics.Raycast(ray, out hit))
-            {
-                Debug.Log(hit.transform.name);
-            }
-        }
-    }
-
     private void OnDestroy()
     {
         //SaveGame();
@@ -120,11 +106,12 @@ public class GameManager : MonoBehaviour
     private void UpdateIridiumPerSecond()
     {
         iridiumPerSecond = 0;
-
         foreach (Building b in buildings)
         {
             iridiumPerSecond += b.GetIridiumPerTick() * ticksPerSecond;
         }
+        
+        iridiumPerClick = Math.Max(1, iridiumPerSecond * iridiumPerClickPercent / 100f);
     }
 
     private void LoadBuildingSOs()
